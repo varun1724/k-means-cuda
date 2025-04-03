@@ -1,19 +1,20 @@
 NVCC = nvcc
-NVCC_FLAGS = -O3 -arch=sm_60
+NVCC_FLAGS = -O3 -arch=sm_60 -std=c++11
 
-TARGET = kmeans
-SRCS = main.cu kmeans.cu
+SRCS = main.cu kmeans_gpu.cu kmeans_cpu.cu
+HEADERS = kmeans_gpu.h kmeans_cpu.h
+
 OBJS = $(SRCS:.cu=.o)
 
-all: $(TARGET)
+all: kmeans
 
-$(TARGET): $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) -o $@ $^
+kmeans: $(OBJS)
+	$(NVCC) $(NVCC_FLAGS) -o $@ $(OBJS)
 
-%.o: %.cu
+%.o: %.cu $(HEADERS)
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(OBJS) kmeans
 
 .PHONY: all clean 

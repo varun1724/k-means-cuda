@@ -1,61 +1,89 @@
 # CUDA-Accelerated K-Means Clustering
 
-This project implements a CUDA-accelerated version of the k-means clustering algorithm. The implementation uses parallel processing on the GPU to significantly speed up the clustering process.
+This project implements k-means clustering algorithm with both CPU and GPU (CUDA) implementations. The goal is to demonstrate the performance benefits of GPU acceleration for this common machine learning algorithm.
+
+## Project Structure
+
+```
+k-means-cuda/
+├── .gitignore           # Git ignore file for build artifacts and system files
+├── Makefile            # Build configuration
+├── main.cu             # Main program entry point
+├── kmeans_cpu.h        # CPU implementation header
+├── kmeans_cpu.cu       # CPU implementation
+├── kmeans_gpu.h        # GPU implementation header
+├── kmeans_gpu.cu       # GPU implementation (to be implemented)
+└── performance_test.cu # Performance testing and comparison
+```
 
 ## Features
 
-- Parallel distance computation between points and centroids
-- Efficient point assignment to nearest centroids
-- Parallel centroid updates
-- Optimized memory access patterns
-- Support for multi-dimensional data
+- CPU implementation of k-means clustering
+- GPU implementation using CUDA (to be implemented)
+- Performance testing framework
+- Configurable parameters for testing different dataset sizes
+- Detailed result verification and debugging output
 
 ## Requirements
 
-- CUDA Toolkit (version 10.0 or higher)
-- NVIDIA GPU with compute capability 6.0 or higher
-- GNU Make
+- CUDA Toolkit (version 11.0 or higher)
+- C++11 compatible compiler
+- Make build system
 
 ## Building
 
-To build the project, simply run:
+To build the project:
 
 ```bash
 make
 ```
 
-This will create an executable named `kmeans`.
-
-## Usage
-
-The program will automatically generate random 2D points and perform k-means clustering with the following default parameters:
-- Number of points: 10,000
-- Number of clusters: 5
-- Dimensions: 2
-- Maximum iterations: 100
-
-To run the program:
+To clean build artifacts:
 
 ```bash
-./kmeans
+make clean
+```
+
+## Running
+
+To run the performance test:
+
+```bash
+./kmeans_test
 ```
 
 ## Implementation Details
 
-The implementation consists of three main CUDA kernels:
+### CPU Implementation
+The CPU implementation uses a straightforward approach with:
+- Sequential point assignment
+- Centroid updates using running sums
+- Early convergence detection
 
-1. `computeDistances`: Computes the squared Euclidean distance between each point and each centroid
-2. `assignPoints`: Assigns each point to its nearest centroid
-3. `updateCentroids`: Updates the centroid positions based on the current assignments
+### GPU Implementation (To Be Implemented)
+The GPU implementation will utilize:
+- Parallel point assignment
+- Shared memory optimizations
+- Efficient centroid updates
+- Memory coalescing for better performance
 
-## Performance
+## Performance Testing
 
-The CUDA implementation provides significant speedup compared to a CPU implementation, especially for large datasets. The exact speedup depends on:
-- Number of points
-- Number of clusters
-- Data dimensionality
-- GPU architecture
+The performance test framework:
+1. Generates test data with controlled properties
+2. Runs both CPU and GPU implementations
+3. Measures execution time
+4. Verifies result correctness
+5. Provides detailed debugging information
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.

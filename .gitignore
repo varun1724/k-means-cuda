@@ -1,0 +1,79 @@
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# CUDA specific
+*.ptx
+*.cub
+*.fatbin
+*.i
+*.ii
+*.gpu
+*.cudafe1.c
+*.cudafe2.c
+*.cudafe1.cpp
+*.cudafe2.cpp
+*.cudafe1.gpu
+*.cudafe2.gpu
+*.cudafe1.stub.c
+*.cudafe2.stub.c
+*.cudafe1.stub.cpp
+*.cudafe2.stub.cpp
+*.cudafe1.stub.gpu
+*.cudafe2.stub.gpu
+*.cudafe1.decl.h
+*.cudafe2.decl.h
+*.cudafe1.cu.c
+*.cudafe2.cu.c
+*.cudafe1.cu.cpp
+*.cudafe2.cu.cpp
+*.cudafe1.cu.gpu
+*.cudafe2.cu.gpu
+*.cudafe1.cu.stub.c
+*.cudafe2.cu.stub.c
+*.cudafe1.cu.stub.cpp
+*.cudafe2.cu.stub.cpp
+*.cudafe1.cu.stub.gpu
+*.cudafe2.cu.stub.gpu
+*.cudafe1.cu.decl.h
+*.cudafe2.cu.decl.h
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Build directories
+build/
+bin/
+lib/
+dist/ 
