@@ -1,10 +1,11 @@
+#include "../include/kmeans_cpu.h"
+// #include "../include/kmeans_gpu.h"  // Commented out GPU header
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <chrono>
-#include "kmeans_cpu.h"
-// #include "kmeans_gpu.h"  // Commented out GPU header
+#include <iostream>
 
 // Function to print usage information
 void printUsage(const char* programName) {
@@ -77,7 +78,9 @@ int main(int argc, char** argv) {
     // Allocate memory
     float* points = new float[num_points * dim];
     float* cpu_centroids = new float[num_centroids * dim];
+    // float* gpu_centroids = new float[num_centroids * dim];  // Commented out GPU memory
     int* cpu_clusters = new int[num_points];
+    // int* gpu_clusters = new int[num_points];  // Commented out GPU memory
     
     // Generate random points
     srand(time(NULL));
@@ -134,7 +137,9 @@ int main(int argc, char** argv) {
     
     delete[] points;
     delete[] cpu_centroids;
+    // delete[] gpu_centroids;  // Commented out GPU memory cleanup
     delete[] cpu_clusters;
+    // delete[] gpu_clusters;  // Commented out GPU memory cleanup
     free(mode);
     
     return 0;

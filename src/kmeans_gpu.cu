@@ -1,4 +1,4 @@
-#include "kmeans_gpu.h"
+#include "../include/kmeans_gpu.h"
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,88 +1,137 @@
-# CUDA-Accelerated K-Means Clustering
+# K-Means Clustering Implementation
 
-This project implements k-means clustering algorithm with both CPU and GPU (CUDA) implementations. The goal is to demonstrate the performance benefits of GPU acceleration for this common machine learning algorithm.
+This project implements the K-Means clustering algorithm with both CPU and GPU (CUDA) implementations. The project is structured to provide a clean separation between CPU and GPU code, making it easy to compare performance and maintain the codebase.
 
 ## Project Structure
 
 ```
 k-means-cuda/
-├── .gitignore           # Git ignore file for build artifacts and system files
+├── include/              # Header files
+│   ├── kmeans_cpu.h     # CPU implementation declarations
+│   └── kmeans_gpu.h     # GPU implementation declarations (for future use)
+├── src/                 # Source files
+│   ├── main.cu          # Main program with all modes
+│   ├── kmeans_cpu.cu    # CPU implementation
+│   └── kmeans_gpu.cu    # GPU implementation (to be implemented)
 ├── Makefile            # Build configuration
-├── main.cu             # Main program entry point
-├── kmeans_cpu.h        # CPU implementation header
-├── kmeans_cpu.cu       # CPU implementation
-├── kmeans_gpu.h        # GPU implementation header
-├── kmeans_gpu.cu       # GPU implementation (to be implemented)
-└── performance_test.cu # Performance testing and comparison
+└── README.md           # This file
 ```
 
 ## Features
 
-- CPU implementation of k-means clustering
-- GPU implementation using CUDA (to be implemented)
-- Performance testing framework
-- Configurable parameters for testing different dataset sizes
-- Detailed result verification and debugging output
+- **CPU Implementation**: Standard implementation of K-Means clustering
+- **Multiple Operation Modes**: Simple, Test, and Verify modes for different use cases
+- **Configurable Parameters**: Adjustable number of points, centroids, dimensions, and iterations
+- **Built-in Verification**: Comprehensive clustering quality metrics
+- **Future GPU Support**: Prepared for CUDA implementation
 
-## Requirements
+## Building the Project
+
+### Prerequisites
 
 - CUDA Toolkit (version 11.0 or higher)
 - C++11 compatible compiler
-- Make build system
+- Make
 
-## Building
+### Build Instructions
 
-To build the project:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/k-means-cuda.git
+   cd k-means-cuda
+   ```
 
+2. Build the project:
+   ```bash
+   make
+   ```
+
+3. Clean build files:
+   ```bash
+   make clean
+   ```
+
+## Usage
+
+The program provides three modes of operation, all accessible through a single executable:
+
+### Simple Mode
+Displays only the final centroids:
 ```bash
-make
+./kmeans --mode=simple [options]
 ```
 
-To clean build artifacts:
-
+### Test Mode
+Shows detailed information including timing and cluster assignments:
 ```bash
-make clean
+./kmeans --mode=test [options]
 ```
 
-## Running
-
-To run the performance test:
-
+### Verify Mode
+Performs comprehensive verification and displays detailed metrics:
 ```bash
-./kmeans_test
+./kmeans --mode=verify [options]
 ```
 
-## Implementation Details
+### Available Options
 
-### CPU Implementation
-The CPU implementation uses a straightforward approach with:
-- Sequential point assignment
-- Centroid updates using running sums
-- Early convergence detection
+- `--points=N`: Number of points (default: 1000)
+- `--centroids=N`: Number of centroids (default: 2)
+- `--dim=N`: Number of dimensions (default: 2)
+- `--iterations=N`: Maximum iterations (default: 10)
+- `--mode=MODE`: Operation mode (simple/test/verify)
+- `--help`: Show help message
 
-### GPU Implementation (To Be Implemented)
-The GPU implementation will utilize:
-- Parallel point assignment
-- Shared memory optimizations
-- Efficient centroid updates
-- Memory coalescing for better performance
+### Examples
 
-## Performance Testing
+1. Basic clustering with default parameters:
+   ```bash
+   ./kmeans --mode=simple
+   ```
 
-The performance test framework:
-1. Generates test data with controlled properties
-2. Runs both CPU and GPU implementations
-3. Measures execution time
-4. Verifies result correctness
-5. Provides detailed debugging information
+2. Detailed testing with custom parameters:
+   ```bash
+   ./kmeans --mode=test --points=10000 --centroids=5 --iterations=100
+   ```
+
+3. Comprehensive verification:
+   ```bash
+   ./kmeans --mode=verify --points=10000 --centroids=4 --iterations=100
+   ```
+
+## Output Information
+
+### Simple Mode
+- Final centroid coordinates
+
+### Test Mode
+- Execution time
+- Final centroid coordinates
+- First 10 point assignments
+- Convergence information
+
+### Verify Mode
+- Execution time
+- Total within-cluster sum of squares
+- Average distance to centroid
+- Cluster size distribution
+- Convergence stability check
+- Empty cluster detection
+
+## Performance Considerations
+
+- The implementation uses efficient data structures and algorithms
+- Early convergence detection based on centroid movement
+- Configurable convergence tolerance
+- Future GPU implementation will provide acceleration for large datasets
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 

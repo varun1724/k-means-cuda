@@ -1,20 +1,26 @@
 NVCC = nvcc
 NVCC_FLAGS = -O3 -arch=sm_60 -std=c++11
+INCLUDES = -I./include
 
-SRCS = main.cu kmeans_gpu.cu kmeans_cpu.cu
-HEADERS = kmeans_gpu.h kmeans_cpu.h
+# Source files
+SRCS = src/main.cu src/kmeans_cpu.cu
+HEADERS = include/kmeans_cpu.h include/kmeans_gpu.h
 
+# Object files
 OBJS = $(SRCS:.cu=.o)
 
-all: kmeans
+# Executable
+TARGET = kmeans
 
-kmeans: $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) -o $@ $(OBJS)
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ $^
 
 %.o: %.cu $(HEADERS)
-	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) kmeans
+	rm -f $(OBJS) $(TARGET)
 
 .PHONY: all clean 

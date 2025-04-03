@@ -77,3 +77,8 @@ build/
 bin/
 lib/
 dist/ 
+
+# Executables
+kmeans
+kmeans_perf
+kmeans_test
