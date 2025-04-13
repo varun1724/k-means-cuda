@@ -150,37 +150,37 @@ For each mode, the program provides:
 $ ./kmeans --mode=compare --points=1000000 --centroids=5 --dim=3 --iterations=100
 
 Results Comparison:
-CPU: Converged Yes in 94 iterations, Time: 6633 ms
-GPU: Converged No in 100 iterations, Time: 236 ms
-Speed up: 28.105932
+CPU: Converged Yes in 79 iterations, Time: 5665 ms
+GPU: Converged Yes in 94 iterations, Time: 224 ms
+Speed up: 25.290178
 
 CPU Centroids:
-76.237732 48.969498 23.066887 
-23.149548 23.686081 50.921329 
-50.682762 76.912537 76.302391 
-26.591623 73.365494 26.412760 
-73.585190 26.616318 73.553749 
+73.518631 73.607964 26.544338 
+26.445738 26.559889 73.514366 
+23.278177 76.565804 49.854202 
+50.270317 23.367228 23.453608 
+76.506493 50.128906 76.700531 
 
 GPU Centroids:
-22.929411 51.443859 23.894617 
-26.408279 26.785614 73.330544 
-51.451694 76.246567 77.019356 
-75.971542 22.913113 48.716747 
-73.431801 73.473732 26.279226 
+73.404716 26.572279 73.645042 
+26.369879 73.275757 26.314873 
+76.550034 76.596176 49.661751 
+23.329519 50.333988 76.672073 
+50.079372 23.205437 23.543196 
 
 CPU Cluster Percentages:
-Cluster 0: 218122 points (21.81%)
-Cluster 1: 217951 points (21.80%)
-Cluster 2: 218671 points (21.87%)
-Cluster 3: 174608 points (17.46%)
-Cluster 4: 170648 points (17.06%)
+Cluster 0: 172326 points (17.23%)
+Cluster 1: 172697 points (17.27%)
+Cluster 2: 218495 points (21.85%)
+Cluster 3: 219463 points (21.95%)
+Cluster 4: 217019 points (21.70%)
 
 GPU Cluster Percentages:
-Cluster 0: 217902 points (21.79%)
-Cluster 1: 175147 points (17.51%)
-Cluster 2: 217943 points (21.79%)
-Cluster 3: 219257 points (21.93%)
-Cluster 4: 169751 points (16.98%)
+Cluster 0: 172199 points (17.22%)
+Cluster 1: 172332 points (17.23%)
+Cluster 2: 218623 points (21.86%)
+Cluster 3: 218282 points (21.83%)
+Cluster 4: 218564 points (21.86%)
 ```
 
 #### Example 2: 2D Dataset with Visualization (1 million points)
