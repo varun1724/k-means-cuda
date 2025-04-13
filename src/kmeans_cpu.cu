@@ -8,48 +8,46 @@
 #include <cmath>
 
 // Main k-means function
-void kmeans_cpu(float* points, float* centroids, int* clusters,
-                int num_points, int num_centroids, int dim, int max_iterations, float tolerance) {
+bool kmeans_cpu(float* points, float* centroids, int* clusters,
+                int num_points, int num_centroids, int dim, int max_iterations, float tolerance,
+                int* iterations) {
     float* newCentroids = new float[num_centroids * dim];
+    bool converged = false;
+    *iterations = 0;
     
     initializeCentroidsCPU(points, centroids, num_points, num_centroids, dim);
     
-    int converged_iteration = -1;
-    
-    for (int i = 0; i < max_iterations; ++i) {
+    for (*iterations = 0; *iterations < max_iterations; (*iterations)++) {
         assignPointsCPU(points, centroids, clusters, num_points, num_centroids, dim);
         updateCentroidsCPU(points, centroids, newCentroids, clusters, num_points, num_centroids, dim);
 
         // Check for convergence
-        float diff = 0.0f;
-        for (int c = 0; c < num_centroids; ++c) {
-            for (int d = 0; d < dim; ++d) {
-                diff += fabs(centroids[c * dim + d] - newCentroids[c * dim + d]);
-                if (diff > tolerance) {
-                    break;
+        float max_diff = 0.0f;
+        for (int c = 0; c < num_centroids; c++) {
+            for (int d = 0; d < dim; d++) {
+                float diff = fabs(centroids[c * dim + d] - newCentroids[c * dim + d]);
+                if (diff > max_diff) {
+                    max_diff = diff;
                 }
             }
         }
-        if (diff < tolerance) {
-            converged_iteration = i + 1;
+
+        // Update centroids for next iteration
+        for (int i = 0; i < num_centroids * dim; i++) {
+            centroids[i] = newCentroids[i];
+        }
+
+        printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", max_diff, *iterations, tolerance);
+
+        if (max_diff < tolerance) {
+            converged = true;
+            (*iterations)++;
             break;
         }
-
-        for (int i = 0; i < num_centroids; ++i) {
-            for (int d = 0; d < dim; ++d) {
-                centroids[i * dim + d] = newCentroids[i * dim + d];
-            }
-        }
-    }
-
-    // Print convergence information
-    if (converged_iteration >= 0) {
-        printf("Converged at iteration %d (within tolerance %.6f)\n", converged_iteration, tolerance);
-    } else {
-        printf("Did not converge within %d iterations (tolerance: %.6f)\n", max_iterations, tolerance);
     }
 
     delete[] newCentroids;
+    return converged;
 }
 
 // Initialize centroids
@@ -114,82 +112,4 @@ void updateCentroidsCPU(float* points, float* centroids, float* newCentroids, in
             }
         }
     }
-}
-
-// Function to verify the clustering results, taken from the internet
-void verifyClustering(float* points, float* centroids, int* clusters, 
-                     int num_points, int num_centroids, int dim) {
-    // Calculate the total within-cluster sum of squares (WCSS)
-    float wcss = 0.0f;
-    for (int p = 0; p < num_points; ++p) {
-        int cluster = clusters[p];
-        float dist = 0.0f;
-        for (int d = 0; d < dim; ++d) {
-            float diff = points[p * dim + d] - centroids[cluster * dim + d];
-            dist += diff * diff;
-        }
-        wcss += dist;
-    }
-    
-    // Count points in each cluster
-    std::vector<int> cluster_sizes(num_centroids, 0);
-    for (int p = 0; p < num_points; ++p) {
-        cluster_sizes[clusters[p]]++;
-    }
-    
-    // Print verification results
-    printf("\nVerification Results:\n");
-    printf("Total within-cluster sum of squares: %.6f\n", wcss);
-    printf("Average distance to centroid: %.6f\n", wcss / num_points);
-    
-    printf("\nCluster sizes:\n");
-    for (int c = 0; c < num_centroids; ++c) {
-        printf("Cluster %d: %d points (%.2f%%)\n", 
-               c, cluster_sizes[c], 
-               (float)cluster_sizes[c] / num_points * 100.0f);
-    }
-    
-    // Check for empty clusters
-    bool has_empty_clusters = false;
-    for (int c = 0; c < num_centroids; ++c) {
-        if (cluster_sizes[c] == 0) {
-            printf("WARNING: Cluster %d is empty!\n", c);
-            has_empty_clusters = true;
-        }
-    }
-    
-    if (!has_empty_clusters) {
-        printf("All clusters have at least one point assigned.\n");
-    }
-    
-    // Check for convergence stability
-    printf("\nChecking convergence stability...\n");
-    float* test_centroids = new float[num_centroids * dim];
-    int* test_clusters = new int[num_points];
-    
-    // Copy initial centroids
-    for (int i = 0; i < num_centroids * dim; ++i) {
-        test_centroids[i] = centroids[i];
-    }
-    
-    // Run one more iteration
-    assignPointsCPU(points, test_centroids, test_clusters, num_points, num_centroids, dim);
-    
-    // Check if assignments changed
-    int changed_assignments = 0;
-    for (int p = 0; p < num_points; ++p) {
-        if (test_clusters[p] != clusters[p]) {
-            changed_assignments++;
-        }
-    }
-    
-    if (changed_assignments == 0) {
-        printf("Convergence is stable: No points changed cluster assignment in an additional iteration.\n");
-    } else {
-        printf("WARNING: Convergence may not be stable: %d points changed cluster assignment in an additional iteration.\n", 
-               changed_assignments);
-    }
-    
-    delete[] test_centroids;
-    delete[] test_clusters;
 } 

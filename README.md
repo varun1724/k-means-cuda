@@ -1,29 +1,53 @@
 # K-Means Clustering Implementation
 
-This project implements the K-Means clustering algorithm with both CPU and GPU (CUDA) implementations. The project is structured to provide a clean separation between CPU and GPU code, making it easy to compare performance and maintain the codebase.
+This project implements the K-Means clustering algorithm with both CPU and GPU (CUDA) implementations. The project provides a comprehensive comparison between CPU and GPU implementations, demonstrating the challenges and benefits of parallel computing in clustering algorithms.
 
 ## Project Structure
 
 ```
 k-means-cuda/
-├── include/              # Header files
-│   ├── kmeans_cpu.h     # CPU implementation declarations
-│   └── kmeans_gpu.h     # GPU implementation declarations (for future use)
-├── src/                 # Source files
-│   ├── main.cu          # Main program with all modes
-│   ├── kmeans_cpu.cu    # CPU implementation
-│   └── kmeans_gpu.cu    # GPU implementation (to be implemented)
-├── Makefile            # Build configuration
-└── README.md           # This file
+├── include/                # Header files
+│   ├── kmeans_cpu.h       # CPU implementation declarations
+│   ├── kmeans_gpu.h       # GPU implementation declarations
+│   └── kmeans_utils.h     # Utility function declarations
+├── src/                   # Source files
+│   ├── main.cu           # Main program
+│   ├── kmeans_cpu.cu     # CPU implementation
+│   ├── kmeans_gpu.cu     # GPU implementation
+│   └── kmeans_utils.cu   # Utility functions implementation
+├── Makefile              # Build configuration
+└── README.md             # This file
 ```
 
 ## Features
 
-- **CPU Implementation**: Standard implementation of K-Means clustering
-- **Multiple Operation Modes**: Simple, Test, and Verify modes for different use cases
+- **Dual Implementation**: Both CPU and GPU implementations of K-Means clustering
+- **Multiple Operation Modes**: CPU-only, GPU-only, and comparison modes
 - **Configurable Parameters**: Adjustable number of points, centroids, dimensions, and iterations
-- **Built-in Verification**: Comprehensive clustering quality metrics
-- **Future GPU Support**: Prepared for CUDA implementation
+- **Performance Analysis**: Tools to compare CPU and GPU performance
+- **Convergence Reporting**: Detailed convergence status and iteration counts
+- **Visualization**: 2D visualization support for better understanding of clustering results
+
+## Implementation Details
+
+### CPU Implementation
+- Sequential implementation using standard C++
+- Direct floating-point operations for high precision
+- Simple and efficient centroid updates
+- Straightforward convergence detection
+
+### GPU Implementation
+- Parallel implementation using CUDA
+- Optimized memory access patterns
+- Shared memory utilization for faster computation
+- Efficient parallel reduction for centroid updates
+- Careful handling of floating-point atomic operations
+
+### Utility Functions
+- Centralized helper functions for both implementations
+- Robust comparison tools for CPU and GPU results
+- Visualization utilities for 2D data
+- Command-line argument parsing and validation
 
 ## Building the Project
 
@@ -43,34 +67,36 @@ k-means-cuda/
 
 2. Build the project:
    ```bash
-   make
-   ```
-
-3. Clean build files:
-   ```bash
    make clean
+   make
    ```
 
 ## Usage
 
-The program provides three modes of operation, all accessible through a single executable:
+The program provides three modes of operation:
 
-### Simple Mode
-Displays only the final centroids:
+### CPU Mode
+Runs only the CPU implementation and displays results:
 ```bash
-./kmeans --mode=simple [options]
+./kmeans --mode=cpu [options]
 ```
 
-### Test Mode
-Shows detailed information including timing and cluster assignments:
+### GPU Mode
+Runs only the GPU implementation and displays results:
 ```bash
-./kmeans --mode=test [options]
+./kmeans --mode=gpu [options]
 ```
 
-### Verify Mode
-Performs comprehensive verification and displays detailed metrics:
+### Compare Mode
+Performs a detailed comparison between CPU and GPU implementations. It shows:
+- Timing information for both implementations
+- Detailed centroid values for both implementations
+- Cluster distribution analysis
+- Visualization of results (for 2D data)
+
+Example:
 ```bash
-./kmeans --mode=verify [options]
+./kmeans --mode=compare --points=10000 --centroids=4 --dim=2 --iterations=100
 ```
 
 ### Available Options
@@ -79,51 +105,51 @@ Performs comprehensive verification and displays detailed metrics:
 - `--centroids=N`: Number of centroids (default: 2)
 - `--dim=N`: Number of dimensions (default: 2)
 - `--iterations=N`: Maximum iterations (default: 10)
-- `--mode=MODE`: Operation mode (simple/test/verify)
+- `--mode=MODE`: Operation mode (cpu/gpu/compare)
 - `--help`: Show help message
 
-### Examples
+### Example Commands
 
-1. Basic clustering with default parameters:
+1. Basic CPU clustering with visualization:
    ```bash
-   ./kmeans --mode=simple
+   ./kmeans --mode=cpu --points=100000 --centroids=3 --dim=2 --iterations=1000
    ```
 
-2. Detailed testing with custom parameters:
+2. GPU clustering with large dataset:
    ```bash
-   ./kmeans --mode=test --points=10000 --centroids=5 --iterations=100
+   ./kmeans --mode=gpu --points=1000000 --centroids=5 --dim=3 --iterations=100
    ```
 
-3. Comprehensive verification:
+3. Performance comparison:
    ```bash
-   ./kmeans --mode=verify --points=10000 --centroids=4 --iterations=100
+   ./kmeans --mode=compare --points=500000 --centroids=4 --dim=2 --iterations=100
    ```
 
 ## Output Information
 
-### Simple Mode
-- Final centroid coordinates
+For each mode, the program provides:
 
-### Test Mode
+### CPU/GPU Mode
+- Convergence status and number of iterations
 - Execution time
-- Final centroid coordinates
-- First 10 point assignments
-- Convergence information
-
-### Verify Mode
-- Execution time
-- Total within-cluster sum of squares
-- Average distance to centroid
+- Final centroid positions
 - Cluster size distribution
-- Convergence stability check
-- Empty cluster detection
+- 2D visualization (if dim=2)
+
+### Compare Mode
+- Convergence status for both implementations
+- Execution time comparison
+- Detailed centroid positions for both implementations
+- Cluster size distributions for both implementations
+- 2D visualizations for both implementations (if dim=2)
 
 ## Performance Considerations
 
-- The implementation uses efficient data structures and algorithms
-- Early convergence detection based on centroid movement
-- Configurable convergence tolerance
-- Future GPU implementation will provide acceleration for large datasets
+- The GPU implementation is most effective for large datasets
+- Performance scales with the number of points and dimensions
+- Memory transfer overhead should be considered for smaller datasets
+- Early convergence detection helps optimize iteration count
+- Shared memory usage significantly improves performance
 
 ## Contributing
 
