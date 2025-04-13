@@ -126,6 +126,7 @@ int main(int argc, char** argv) {
                cpu_converged ? "Yes" : "No", cpu_iterations, cpu_duration.count());
         printf("GPU: Converged %s in %d iterations, Time: %ld ms\n",
                gpu_converged ? "Yes" : "No", gpu_iterations, gpu_duration.count());
+        printf("Speed up: %f\n", (float)cpu_duration.count() / gpu_duration.count());
         
         printf("\nCPU Centroids:\n");
         for (int i = 0; i < num_centroids; i++) {
