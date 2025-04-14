@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     bool gpu_converged = false;
     
     // Warm up GPU
-    if (strcmp(mode, "gpu") != 0) {
+    if (strcmp(mode, "gpu") == 0 || strcmp(mode, "compare") == 0) {
         printf("Warm up GPU...\n");
         warmupGPU(num_points, num_centroids, dim, TOLERANCE);
     }
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         
         printf("\nCPU Results:\n");
         printf("Converged: %s in %d iterations\n", cpu_converged ? "Yes" : "No", cpu_iterations);
-        printf("Time: %ld ms\n", duration.count());
+        printf("Time: %ld ms (%.2f ms/iteration)\n", duration.count(), (float)duration.count()/cpu_iterations);
 
         printf("\nCPU Centroids:\n");
         for (int i = 0; i < num_centroids; i++) {
@@ -75,6 +75,8 @@ int main(int argc, char** argv) {
     else if (strcmp(mode, "gpu") == 0) {
         // Simple GPU-only run
         printf("\nRunning GPU implementation...\n");
+
+        // Actual timed run
         auto start = std::chrono::high_resolution_clock::now();
         gpu_converged = kmeans_cuda(points, gpu_centroids, gpu_clusters, 
                                   num_points, num_centroids, dim, 
@@ -84,7 +86,7 @@ int main(int argc, char** argv) {
         
         printf("\nGPU Results:\n");
         printf("Converged: %s in %d iterations\n", gpu_converged ? "Yes" : "No", gpu_iterations);
-        printf("Time: %ld ms\n", duration.count());
+        printf("Time: %ld ms (%.2f ms/iteration)\n", duration.count(), (float)duration.count()/gpu_iterations);
 
         printf("\nGPU Centroids:\n");
         for (int i = 0; i < num_centroids; i++) {
@@ -122,11 +124,11 @@ int main(int argc, char** argv) {
         
         // Print results
         printf("\nResults Comparison:\n");
-        printf("CPU: Converged %s in %d iterations, Time: %ld ms\n",
-               cpu_converged ? "Yes" : "No", cpu_iterations, cpu_duration.count());
-        printf("GPU: Converged %s in %d iterations, Time: %ld ms\n",
-               gpu_converged ? "Yes" : "No", gpu_iterations, gpu_duration.count());
-        printf("Speed up: %f\n", (float)cpu_duration.count() / gpu_duration.count());
+        printf("CPU: Converged %s in %d iterations, Time: %d ms (%.2f ms/iteration)\n", 
+               cpu_converged ? "Yes" : "No", cpu_iterations, cpu_duration.count(), (float)cpu_duration.count()/cpu_iterations);
+        printf("GPU: Converged %s in %d iterations, Time: %d ms (%.2f ms/iteration)\n", 
+               gpu_converged ? "Yes" : "No", gpu_iterations, gpu_duration.count(), (float)gpu_duration.count()/gpu_iterations);
+        printf("Speed up: %f\n\n", (float)cpu_duration.count()/gpu_duration.count());
         
         printf("\nCPU Centroids:\n");
         for (int i = 0; i < num_centroids; i++) {

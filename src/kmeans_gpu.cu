@@ -42,6 +42,16 @@ __global__ void initializeCentroidsGPU(float* points, float* centroids, int num_
 __global__ void assignPointsGPU(float* points, float* centroids, int* clusters, 
                                int num_points, int num_centroids, int dim) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    extern __shared__ float shared_centroids[];
+    
+    for (int c = threadIdx.x; c < num_centroids * dim; c += blockDim.x) {
+        if (c < num_centroids * dim) {
+            shared_centroids[c] = centroids[c];
+        }
+    }
+    __syncthreads();
+    
     if (idx < num_points) {
         float min_dist = INFINITY;
         int closest_centroid = 0;
@@ -50,7 +60,7 @@ __global__ void assignPointsGPU(float* points, float* centroids, int* clusters,
         for (int c = 0; c < num_centroids; c++) {
             float dist = 0.0f;
             for (int d = 0; d < dim; d++) {
-                float diff = points[idx * dim + d] - centroids[c * dim + d];
+                float diff = points[idx * dim + d] - shared_centroids[c * dim + d];
                 dist += diff * diff;
             }
             
@@ -146,7 +156,7 @@ bool kmeans_cuda(float* points, float* centroids, int* clusters,
         CUDA_CHECK(cudaMemsetAsync(d_newCentroids, 0, num_centroids * dim * sizeof(float), streams[0]));
         CUDA_CHECK(cudaMemsetAsync(d_counts, 0, num_centroids * sizeof(int), streams[0]));
         CUDA_CHECK(cudaMemsetAsync(d_sums, 0, num_centroids * dim * sizeof(float), streams[0]));
-        assignPointsGPU<<<num_blocks_points, block_size, 0, streams[0]>>>(
+        assignPointsGPU<<<num_blocks_points, block_size, num_centroids * dim * sizeof(float), streams[0]>>>(
             d_points, d_centroids, d_clusters, num_points, num_centroids, dim);
 
         // Stream 1: Handle dimension updates (after stream 0 completes)

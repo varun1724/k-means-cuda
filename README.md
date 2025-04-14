@@ -312,26 +312,29 @@ The following benchmarks were conducted with these parameters:
 
 Results from multiple runs:
 
-| Run | CPU Time (ms) | CPU Iterations | GPU Time (ms) | GPU Iterations | Speedup |
-|-----|---------------|----------------|---------------|----------------|---------|
-| 1   | 3795         | 51             | 236           | 91             | 16.08x  |
-| 2   | 7410         | 98             | 226           | 87             | 32.79x  |
-| 3   | 8377         | 118            | 508           | 233            | 16.49x  |
-| 4   | 6286         | 88             | 205           | 78             | 30.66x  |
+| Run | CPU Time (ms) | CPU Iterations | CPU ms/iter | GPU Time (ms) | GPU Iterations | GPU ms/iter | Speedup |
+|-----|---------------|----------------|-------------|---------------|----------------|-------------|---------|
+| 1   | 3795         | 51             | 74.41       | 236           | 91             | 2.59        | 16.08x  |
+| 2   | 7410         | 98             | 75.61       | 226           | 87             | 2.60        | 32.79x  |
+| 3   | 8377         | 118            | 71.00       | 508           | 233            | 2.18        | 16.49x  |
+| 4   | 6286         | 88             | 71.43       | 205           | 78             | 2.63        | 30.66x  |
 
 Average Metrics:
 - CPU Time: 6467ms ± 1989ms
 - CPU Iterations: 89 ± 28
+- CPU Time per Iteration: 73.11ms ± 2.28ms
 - GPU Time: 294ms ± 144ms
 - GPU Iterations: 122 ± 73
+- GPU Time per Iteration: 2.50ms ± 0.21ms
 - Average Speedup: 24.01x ± 8.85x
 
 Key Observations:
 1. GPU implementation consistently outperforms CPU by a significant margin
 2. Iteration count varies between runs due to random initialization
-3. GPU time remains relatively stable compared to CPU time
+3. GPU time per iteration remains very stable (low standard deviation)
 4. Both implementations achieve convergence reliably
 5. Cluster distribution remains balanced (~20% per cluster) across runs
+6. Per-iteration speedup is even more consistent than total runtime speedup
 
 ## Performance Considerations
 
