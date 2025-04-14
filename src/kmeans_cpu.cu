@@ -37,7 +37,7 @@ bool kmeans_cpu(float* points, float* centroids, int* clusters,
             centroids[i] = newCentroids[i];
         }
 
-        printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", max_diff, *iterations, tolerance);
+        // printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", max_diff, *iterations, tolerance);
 
         if (max_diff < tolerance) {
             converged = true;
