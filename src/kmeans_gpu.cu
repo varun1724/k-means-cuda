@@ -14,6 +14,19 @@
     } \
 } while (0)
 
+// Atomic max for float
+__device__ float atomicMaxFloat(float* address, float val) {
+    int* address_as_int = (int*)address;
+    int old = *address_as_int;
+    int expected;
+    do {
+        expected = old;
+        old = atomicCAS(address_as_int, expected,
+            __float_as_int(max(__int_as_float(expected), val)));
+    } while (expected != old);
+    return __int_as_float(old);
+}
+
 // Initialize centroids on GPU
 __global__ void initializeCentroidsGPU(float* points, float* centroids, int num_points, int num_centroids, int dim) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -79,6 +92,19 @@ __global__ void updateCentroidsGPU(float* points, float* centroids, float* newCe
     }
 }
 
+// Check if the centroids have converged
+__global__ void checkConvergenceGPU(float* centroids, float* newCentroids, int num_centroids, int dim, float tolerance, float* max_diff) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (idx < num_centroids) {
+        for (int d = 0; d < dim; d++) {
+            float diff = fabs(centroids[idx * dim + d] - newCentroids[idx * dim + d]);
+            atomicMaxFloat(max_diff, diff);
+        }
+    }    
+}
+
+
 // Main k-means function
 bool kmeans_cuda(float* points, float* centroids, int* clusters,
                 int num_points, int num_centroids, int dim, int max_iterations, float tolerance,
@@ -136,18 +162,17 @@ bool kmeans_cuda(float* points, float* centroids, int* clusters,
         CUDA_CHECK(cudaMemcpy(newCentroids, d_newCentroids, (num_centroids * dim) * sizeof(float), cudaMemcpyDeviceToHost));
         
         // Check convergence
-        float max_diff = 0.0f;
-        for (int c = 0; c < num_centroids; c++) {
-            for (int d = 0; d < dim; d++) {
-                int idx = c * dim + d;
-                float diff = fabs(centroids[idx] - newCentroids[idx]);
-                if (diff > max_diff) {
-                    max_diff = diff;
-                }
-            }
-        }
+        float* d_max_diff;
+        CUDA_CHECK(cudaMalloc(&d_max_diff, sizeof(float)));
+        CUDA_CHECK(cudaMemset(d_max_diff, 0, sizeof(float)));
+        
+        checkConvergenceGPU<<<num_blocks_centroids, block_size>>>(d_centroids, d_newCentroids, num_centroids, dim, tolerance, d_max_diff);
+        
+        float h_max_diff;
+        CUDA_CHECK(cudaMemcpy(&h_max_diff, d_max_diff, sizeof(float), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaFree(d_max_diff));
 
-        printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", max_diff, *iterations, tolerance);
+        printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", h_max_diff, *iterations, tolerance);
 
         // Update centroids for next iteration
         for (int i = 0; i < num_centroids * dim; i++) {
@@ -159,7 +184,7 @@ bool kmeans_cuda(float* points, float* centroids, int* clusters,
         
         delete[] newCentroids;
         
-        if (max_diff < tolerance) {
+        if (h_max_diff < tolerance) {
             converged = true;
             break;
         }

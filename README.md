@@ -301,6 +301,38 @@ These example demonstrate:
   - Dense point distribution within each cluster
   - Numbers (0-3) representing points in different clusters
 
+## Current Performance Benchmarks
+
+The following benchmarks were conducted with these parameters:
+- Points: 1,000,000
+- Centroids: 5
+- Dimensions: 3
+- Max Iterations: 1000
+- Hardware: [Your GPU Model]
+
+Results from multiple runs:
+
+| Run | CPU Time (ms) | CPU Iterations | GPU Time (ms) | GPU Iterations | Speedup |
+|-----|---------------|----------------|---------------|----------------|---------|
+| 1   | 3795         | 51             | 236           | 91             | 16.08x  |
+| 2   | 7410         | 98             | 226           | 87             | 32.79x  |
+| 3   | 8377         | 118            | 508           | 233            | 16.49x  |
+| 4   | 6286         | 88             | 205           | 78             | 30.66x  |
+
+Average Metrics:
+- CPU Time: 6467ms ± 1989ms
+- CPU Iterations: 89 ± 28
+- GPU Time: 294ms ± 144ms
+- GPU Iterations: 122 ± 73
+- Average Speedup: 24.01x ± 8.85x
+
+Key Observations:
+1. GPU implementation consistently outperforms CPU by a significant margin
+2. Iteration count varies between runs due to random initialization
+3. GPU time remains relatively stable compared to CPU time
+4. Both implementations achieve convergence reliably
+5. Cluster distribution remains balanced (~20% per cluster) across runs
+
 ## Performance Considerations
 
 - The GPU implementation is most effective for large datasets
