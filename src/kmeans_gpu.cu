@@ -14,16 +14,16 @@
     } \
 } while (0)
 
-// Atomic max for float
-__device__ float atomicMaxFloat(float* address, float val) {
-    int* address_as_int = (int*)address;
-    int old = *address_as_int;
-    int expected;
+// Atomic operation for float values
+__device__ float atomicMaxFloat(float* addr, float val) {
+    unsigned int* address_as_uint = (unsigned int*)addr;
+    unsigned int old = *address_as_uint;
+    unsigned int assumed;
     do {
-        expected = old;
-        old = atomicCAS(address_as_int, expected,
-            __float_as_int(max(__int_as_float(expected), val)));
-    } while (expected != old);
+        assumed = old;
+        old = atomicCAS(address_as_uint, assumed,
+            __float_as_int(fmaxf(val, __int_as_float(assumed))));
+    } while (assumed != old);
     return __int_as_float(old);
 }
 
@@ -41,10 +41,11 @@ __global__ void initializeCentroidsGPU(float* points, float* centroids, int num_
 // Assign points to clusters on GPU
 __global__ void assignPointsGPU(float* points, float* centroids, int* clusters, 
                                int num_points, int num_centroids, int dim) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
     extern __shared__ float shared_centroids[];
     
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    #pragma unroll 4
     for (int c = threadIdx.x; c < num_centroids * dim; c += blockDim.x) {
         if (c < num_centroids * dim) {
             shared_centroids[c] = centroids[c];
@@ -56,11 +57,19 @@ __global__ void assignPointsGPU(float* points, float* centroids, int* clusters,
         float min_dist = INFINITY;
         int closest_centroid = 0;
         
-        // Find the nearest centroid for the current point
+        // Register loads
+        float point_coords[32];  // Max dim is 32
+        #pragma unroll 4
+        for (int d = 0; d < dim; d++) {
+            point_coords[d] = points[idx * dim + d];
+        }
+        
         for (int c = 0; c < num_centroids; c++) {
             float dist = 0.0f;
+            
+            #pragma unroll 4
             for (int d = 0; d < dim; d++) {
-                float diff = points[idx * dim + d] - shared_centroids[c * dim + d];
+                float diff = point_coords[d] - shared_centroids[c * dim + d];
                 dist += diff * diff;
             }
             
@@ -74,46 +83,95 @@ __global__ void assignPointsGPU(float* points, float* centroids, int* clusters,
     }
 }
 
-// Assign points to clusters for a specific dimension on GPU
-__global__ void updatePointsForDimGPU(float* points, int* clusters, int* counts, float* sums, int num_points, int num_dims, int curDim) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+// Update points kernel 
+__global__ void updatePointsForDimGPU(float* points, int* clusters, int* counts, float* sums, 
+                                     int num_points, int num_dims, int curDim) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
     if (idx < num_points) {
         int cluster = clusters[idx];
-        atomicAdd(&sums[cluster * num_dims + curDim], points[idx * num_dims + curDim]);
+        float point_val = points[idx * num_dims + curDim];
+        
+        __shared__ float shared_sums[32];  // Max clusters is 32
+        __shared__ int shared_counts[32];
+        
+        if (threadIdx.x < 32) {
+            shared_sums[threadIdx.x] = 0.0f;
+            shared_counts[threadIdx.x] = 0;
+        }
+        __syncthreads();
+        
+        atomicAdd(&shared_sums[cluster], point_val);
+        // Only update count for first dimension -> each point only added once
         if (curDim == 0) {
-            atomicAdd(&counts[cluster], 1);
+            atomicAdd(&shared_counts[cluster], 1);
+        }
+        __syncthreads();
+        
+        // Only one thread per block updates global memory
+        if (threadIdx.x < 32) {
+            if (shared_sums[threadIdx.x] != 0.0f) {
+                atomicAdd(&sums[threadIdx.x * num_dims + curDim], shared_sums[threadIdx.x]);
+            }
+            if (curDim == 0 && shared_counts[threadIdx.x] > 0) {
+                atomicAdd(&counts[threadIdx.x], shared_counts[threadIdx.x]);
+            }
         }
     }
 }
 
-// Update centroids on GPU - accumulate sums and counts
+// Update centroids on GPU 
 __global__ void updateCentroidsGPU(float* points, float* centroids, float* newCentroids, 
-                                  int* clusters, int* counts, float* sums, int num_points, int num_centroids, int dim) {
+                                  int* clusters, int* counts, float* sums, 
+                                  int num_points, int num_centroids, int dim) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
     if (idx < num_centroids) {
-        for (int d = 0; d < dim; d++) {
-            if (counts[idx] > 0) {
-                newCentroids[idx * dim + d] = sums[idx * dim + d] / counts[idx];
-            } else {
+        int count = counts[idx];
+        if (count > 0) {
+            double inv_count = 1.0 / count;
+            
+            #pragma unroll 4
+            for (int d = 0; d < dim; d++) {
+                newCentroids[idx * dim + d] = (float)(sums[idx * dim + d] * inv_count);
+            }
+        } else {
+            #pragma unroll 4
+            for (int d = 0; d < dim; d++) {
                 newCentroids[idx * dim + d] = centroids[idx * dim + d];
             }
         }
     }
 }
 
-// Check if the centroids have converged
-__global__ void checkConvergenceGPU(float* centroids, float* newCentroids, int num_centroids, int dim, float tolerance, float* max_diff) {
+// Check convergence 
+__global__ void checkConvergenceGPU(float* centroids, float* newCentroids, 
+                                   int num_centroids, int dim, float tolerance, float* max_diff) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
+    
     if (idx < num_centroids) {
+        float local_max_diff = 0.0f;
+        
+        #pragma unroll 4
         for (int d = 0; d < dim; d++) {
-            float diff = fabs(centroids[idx * dim + d] - newCentroids[idx * dim + d]);
-            atomicMaxFloat(max_diff, diff);
+            float old_val = centroids[idx * dim + d];
+            float new_val = newCentroids[idx * dim + d];
+            
+            float abs_val = fmaxf(fabsf(old_val), fabsf(new_val));
+            float diff;
+            if (abs_val > 1e-6f) {
+                diff = fabsf(new_val - old_val) / abs_val;
+            } else {
+                diff = fabsf(new_val - old_val);
+            }
+            local_max_diff = fmaxf(local_max_diff, diff);
         }
-    }    
+        
+        if (local_max_diff > 0.0f) {
+            atomicMaxFloat(max_diff, local_max_diff);
+        }
+    }
 }
-
 
 // Main k-means function
 bool kmeans_cuda(float* points, float* centroids, int* clusters, 
@@ -141,7 +199,6 @@ bool kmeans_cuda(float* points, float* centroids, int* clusters,
     CUDA_CHECK(cudaMemcpyAsync(d_centroids, centroids, num_centroids * dim * sizeof(float), 
                               cudaMemcpyHostToDevice, streams[1]));
 
-    // Calculate grid and block dimensions
     int block_size = 256;
     int num_blocks_points = (num_points + block_size - 1) / block_size;
     int num_blocks_centroids = (num_centroids + block_size - 1) / block_size;
@@ -152,41 +209,43 @@ bool kmeans_cuda(float* points, float* centroids, int* clusters,
     while (!converged && *iterations < max_iterations) {
         (*iterations)++;
 
-        // Stream 0: Reset arrays and assign points
         CUDA_CHECK(cudaMemsetAsync(d_newCentroids, 0, num_centroids * dim * sizeof(float), streams[0]));
         CUDA_CHECK(cudaMemsetAsync(d_counts, 0, num_centroids * sizeof(int), streams[0]));
         CUDA_CHECK(cudaMemsetAsync(d_sums, 0, num_centroids * dim * sizeof(float), streams[0]));
-        assignPointsGPU<<<num_blocks_points, block_size, num_centroids * dim * sizeof(float), streams[0]>>>(
+        
+        size_t shared_mem_size = num_centroids * dim * sizeof(float);
+        assignPointsGPU<<<num_blocks_points, block_size, shared_mem_size, streams[0]>>>(
             d_points, d_centroids, d_clusters, num_points, num_centroids, dim);
-
-        // Stream 1: Handle dimension updates (after stream 0 completes)
+        CUDA_CHECK(cudaGetLastError());
         CUDA_CHECK(cudaStreamSynchronize(streams[0]));
+
         for (int d = 0; d < dim; d++) {
             updatePointsForDimGPU<<<num_blocks_points, block_size, 0, streams[1]>>>(
                 d_points, d_clusters, d_counts, d_sums, num_points, dim, d);
+            CUDA_CHECK(cudaGetLastError());
         }
+        CUDA_CHECK(cudaStreamSynchronize(streams[1]));
+            
         updateCentroidsGPU<<<num_blocks_points, block_size, 0, streams[1]>>>(
             d_points, d_centroids, d_newCentroids, d_clusters, d_counts, d_sums, 
             num_points, num_centroids, dim);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaStreamSynchronize(streams[1]));
 
-        // Stream 2: Handle convergence check (can start as soon as centroids are updated)
         CUDA_CHECK(cudaMemsetAsync(d_max_diff, 0, sizeof(float), streams[2]));
         CUDA_CHECK(cudaStreamSynchronize(streams[1]));
+        
         checkConvergenceGPU<<<num_blocks_centroids, block_size, 0, streams[2]>>>(
             d_centroids, d_newCentroids, num_centroids, dim, tolerance, d_max_diff);
+        CUDA_CHECK(cudaGetLastError());
 
         float h_max_diff;
         CUDA_CHECK(cudaMemcpyAsync(&h_max_diff, d_max_diff, sizeof(float), 
                                   cudaMemcpyDeviceToHost, streams[2]));
-        
-        // Only need to synchronize stream 2 for convergence check
         CUDA_CHECK(cudaStreamSynchronize(streams[2]));
-
-        // printf("Max diff: %.6f, Iteration: %d, Tolerance: %.3f\n", h_max_diff, *iterations, tolerance);
         
         converged = (h_max_diff <= tolerance);
         
-        // Stream 0: Update centroids for next iteration (can happen while convergence is being checked)
         if (!converged) {
             CUDA_CHECK(cudaMemcpyAsync(d_centroids, d_newCentroids, 
                                      num_centroids * dim * sizeof(float),

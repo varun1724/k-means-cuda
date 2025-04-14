@@ -14,8 +14,8 @@ void printUsage(const char* programName) {
     printf("Usage: %s [options]\n\n", programName);
     printf("Options:\n");
     printf("  --points=N          Number of points (default: 1000)\n");
-    printf("  --centroids=N       Number of centroids (default: 2)\n");
-    printf("  --dim=N             Number of dimensions (default: 2)\n");
+    printf("  --centroids=N       Number of centroids (default: 2, max: 32)\n");
+    printf("  --dim=N             Number of dimensions (default: 2, max: 32)\n");
     printf("  --iterations=N      Maximum iterations (default: 10)\n");
     printf("  --mode=MODE         Operation mode (default: cpu)\n");
     printf("                      MODE can be: cpu, gpu, compare\n");
